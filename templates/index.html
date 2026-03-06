@@ -72,10 +72,10 @@
                 ⬆ {{ ride.start_time.strftime("%H:%M:%S") }} |
                 ⬇ {{ ride.end_time.strftime("%H:%M:%S") }}
             </small>
-
+            
             <div class="big-timer mt-2"
-                 id="timer-{{ride.id}}"
-                 data-end="{{ride.end_time}}">
+                id="timer-{{ride.id}}"
+                data-end="{{ ride.end_time.isoformat() }}">
             </div>
 
         </div>

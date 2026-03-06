@@ -31,7 +31,7 @@ def index():
 
         total_amount = num_children * blocks * PRICE_PER_BLOCK
 
-        start_time = datetime.now()
+        start_time = datetime.utcnow()
         end_time = start_time + timedelta(minutes=blocks * BLOCK_MINUTES)
 
         ride = Ride(
@@ -46,7 +46,7 @@ def index():
         db.session.commit()
         return redirect("/")
 
-    now = datetime.now()
+    now = datetime.utcnow()
     active_rides = Ride.query.filter_by(status="active").all()
 
     for ride in active_rides:
