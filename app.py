@@ -25,6 +25,7 @@ class Ride(db.Model):
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+
     if request.method == "POST":
         num_children = int(request.form["num_children"])
         blocks = int(request.form["blocks"])
@@ -44,23 +45,39 @@ def index():
 
         db.session.add(ride)
         db.session.commit()
+
         return redirect("/")
 
     now = datetime.utcnow()
-    active_rides = Ride.query.filter_by(status="active").all()
 
-    for ride in active_rides:
+    rides_db = Ride.query.filter_by(status="active").order_by(Ride.end_time).all()
+
+    rides = []
+
+    for ride in rides_db:
+
         if now >= ride.end_time:
             ride.status = "finished"
+            continue
+
+        remaining = int((ride.end_time - now).total_seconds())
+
+        rides.append({
+            "id": ride.id,
+            "num_children": ride.num_children,
+            "total_amount": ride.total_amount,
+            "start_time": ride.start_time,
+            "end_time": ride.end_time,
+            "remaining": remaining
+        })
+
     db.session.commit()
 
-    active_rides = Ride.query.filter_by(status="active").order_by(Ride.end_time).all()
-
-    return render_template("index.html", rides=active_rides)
+    return render_template("index.html", rides=rides)
 
 
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-    # app.run(debug=True)
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000))) # For render
+
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
