@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 import os
 
 app = Flask(__name__)
@@ -25,14 +26,13 @@ class Ride(db.Model):
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-
     if request.method == "POST":
         num_children = int(request.form["num_children"])
         blocks = int(request.form["blocks"])
 
         total_amount = num_children * blocks * PRICE_PER_BLOCK
 
-        start_time = datetime.utcnow()
+        start_time = datetime.utcnow().replace(tzinfo=timezone.utc)
         end_time = start_time + timedelta(minutes=blocks * BLOCK_MINUTES)
 
         ride = Ride(
@@ -45,29 +45,34 @@ def index():
 
         db.session.add(ride)
         db.session.commit()
-
         return redirect("/")
 
-    now = datetime.utcnow()
+    now = datetime.utcnow().replace(tzinfo=timezone.utc)
+    tz_mx = ZoneInfo("America/Mexico_City")
 
     rides_db = Ride.query.filter_by(status="active").order_by(Ride.end_time).all()
-
     rides = []
 
     for ride in rides_db:
+        ride_start_utc = ride.start_time.replace(tzinfo=timezone.utc)
+        ride_end_utc = ride.end_time.replace(tzinfo=timezone.utc)
 
-        if now >= ride.end_time:
+        if now >= ride_end_utc:
             ride.status = "finished"
             continue
 
-        remaining = int((ride.end_time - now).total_seconds())
+        remaining = int((ride_end_utc - now).total_seconds())
+
+        # Convierte a hora local México (Guadalajara)
+        start_local = ride_start_utc.astimezone(tz_mx)
+        end_local = ride_end_utc.astimezone(tz_mx)
 
         rides.append({
             "id": ride.id,
             "num_children": ride.num_children,
             "total_amount": ride.total_amount,
-            "start_time": ride.start_time,
-            "end_time": ride.end_time,
+            "start_time": start_local,
+            "end_time": end_local,
             "remaining": remaining
         })
 
