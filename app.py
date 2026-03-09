@@ -5,8 +5,8 @@ from zoneinfo import ZoneInfo
 import os
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
@@ -40,7 +40,7 @@ def index():
             blocks=blocks,
             total_amount=total_amount,
             start_time=start_time,
-            end_time=end_time
+            end_time=end_time,
         )
 
         db.session.add(ride)
@@ -67,14 +67,16 @@ def index():
         start_local = ride_start_utc.astimezone(tz_mx)
         end_local = ride_end_utc.astimezone(tz_mx)
 
-        rides.append({
-            "id": ride.id,
-            "num_children": ride.num_children,
-            "total_amount": ride.total_amount,
-            "start_time": start_local,
-            "end_time": end_local,
-            "remaining": remaining
-        })
+        rides.append(
+            {
+                "id": ride.id,
+                "num_children": ride.num_children,
+                "total_amount": ride.total_amount,
+                "start_time": start_local,
+                "end_time": end_local,
+                "remaining": remaining,
+            }
+        )
 
     db.session.commit()
 
