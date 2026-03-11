@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -81,6 +81,54 @@ def index():
     db.session.commit()
 
     return render_template("index.html", rides=rides)
+
+
+@app.route("/inactive", methods=["GET"])
+def inactive():
+    tz_mx = ZoneInfo("America/Mexico_City")
+    
+    # Get date filter from query parameters
+    date_filter = request.args.get('date')
+    
+    query = Ride.query.filter(Ride.status != "active")
+    
+    if date_filter:
+        try:
+            # Parse date (assuming YYYY-MM-DD format)
+            filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+            # Filter by start_time date in UTC, but since we're converting to local, maybe filter in local time?
+            # For simplicity, filter by start_time.date() == filter_date, but need to handle timezone
+            # Actually, to filter properly, convert filter_date to UTC range
+            start_of_day_utc = datetime.combine(filter_date, datetime.min.time()).replace(tzinfo=tz_mx).astimezone(timezone.utc)
+            end_of_day_utc = datetime.combine(filter_date, datetime.max.time()).replace(tzinfo=tz_mx).astimezone(timezone.utc)
+            query = query.filter(Ride.start_time >= start_of_day_utc, Ride.start_time <= end_of_day_utc)
+        except ValueError:
+            pass  # Invalid date, ignore filter
+    
+    rides_db = query.all()
+    rides = []
+    
+    for ride in rides_db:
+        ride_start_utc = ride.start_time.replace(tzinfo=timezone.utc)
+        ride_end_utc = ride.end_time.replace(tzinfo=timezone.utc)
+        
+        # Convert to local time (Mexico City)
+        start_local = ride_start_utc.astimezone(tz_mx)
+        end_local = ride_end_utc.astimezone(tz_mx)
+        
+        rides.append(
+            {
+                "id": ride.id,
+                "num_children": ride.num_children,
+                "blocks": ride.blocks,
+                "total_amount": ride.total_amount,
+                "start_time": start_local,
+                "end_time": end_local,
+                "status": ride.status,
+            }
+        )
+    
+    return render_template("inactive.html", rides=rides, date_filter=date_filter)
 
 
 if __name__ == "__main__":
