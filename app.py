@@ -95,13 +95,14 @@ def inactive():
     if date_filter:
         try:
             # Parse date (assuming YYYY-MM-DD format)
-            filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
-            # Filter by start_time date in UTC, but since we're converting to local, maybe filter in local time?
-            # For simplicity, filter by start_time.date() == filter_date, but need to handle timezone
-            # Actually, to filter properly, convert filter_date to UTC range
-            start_of_day_utc = datetime.combine(filter_date, datetime.min.time()).replace(tzinfo=tz_mx).astimezone(timezone.utc)
-            end_of_day_utc = datetime.combine(filter_date, datetime.max.time()).replace(tzinfo=tz_mx).astimezone(timezone.utc)
-            query = query.filter(Ride.start_time >= start_of_day_utc, Ride.start_time <= end_of_day_utc)
+            # filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+            start = datetime.strptime(date_filter, "%Y-%m-%d")
+            end = start + timedelta(days=1)            
+
+            query = query.filter(
+                Ride.start_time >= start,
+                Ride.start_time < end
+            )            
         except ValueError:
             pass  # Invalid date, ignore filter
     
