@@ -23,9 +23,9 @@ class Ride(db.Model):
     num_children = db.Column(db.Integer)
     blocks = db.Column(db.Integer)
     total_amount = db.Column(db.Float)
-    start_time = db.Column(db.DateTime)
-    end_time = db.Column(db.DateTime)
-    status = db.Column(db.String(20), default="active")
+    start_time = db.Column(db.DateTime(timezone=True), index=True)
+    end_time = db.Column(db.DateTime(timezone=True), index=True)
+    status = db.Column(db.String(20), default="active", index=True)
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -36,7 +36,7 @@ def index():
 
         total_amount = num_children * blocks * PRICE_PER_BLOCK
 
-        start_time = datetime.utcnow().replace(tzinfo=timezone.utc)
+        start_time = datetime.now(timezone.utc)
         end_time = start_time + timedelta(minutes=blocks * BLOCK_MINUTES)
 
         ride = Ride(
@@ -51,7 +51,7 @@ def index():
         db.session.commit()
         return redirect("/")
 
-    now = datetime.utcnow().replace(tzinfo=timezone.utc)
+    now = datetime.now(timezone.utc)
     tz_mx = ZoneInfo("America/Mexico_City")
 
     rides_db = Ride.query.filter_by(status="active").order_by(Ride.end_time).all()
