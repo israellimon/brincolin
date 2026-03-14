@@ -5,7 +5,11 @@ from zoneinfo import ZoneInfo
 import os
 
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+db_user = os.getenv("DB_USER", "")
+db_password = os.getenv("DB_PASSWORD", "")
+db_host = os.getenv("DB_HOST", "")
+db_name = os.getenv("DB_NAME", "")
+app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql+psycopg2://{db_user}:{db_password}@{db_host}/{db_name}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
